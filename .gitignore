@@ -1,0 +1,6 @@
+.*.swp
+node_modules
+/hw/stack-machine
+/build
+
+_npmlink
