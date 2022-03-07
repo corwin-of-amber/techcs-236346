@@ -1,5 +1,7 @@
 .*.swp
 node_modules
+.ipynb_checkpoints
+__pycache__
 /hw/stack-machine
 /build
 
