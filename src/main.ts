@@ -12,7 +12,7 @@ async function main() {
     sim.on('end', () => { setTimeout(() => crt.refresh(), 20); crt.stop(); });
     /* Input */
     var ival = window.setInterval(() => sim.process.stdin.write('-'), 100);
-    sim.on('env', () => window.clearInterval(ival));
+    sim.on('end', () => window.clearInterval(ival));
 
     /* Engage! */
     await Promise.resolve();
