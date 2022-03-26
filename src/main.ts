@@ -1,26 +1,33 @@
 import { Crt } from './crt';
 import { Simulation } from './sim';
+import { DeviceEmulator } from './device';
 
 
 async function main() {
-    var crt = new Crt(document.querySelector('#crt'));
-    crt.start(25);
+    var device = new DeviceEmulator(
+        new Simulation("./hw/stack-machine/bin/stack-machine"),
+        new Crt(document.querySelector('#crt'))
+    );
 
-    var sim = new Simulation("./hw/stack-machine/bin/stack-machine");
-    /* Video */
-    sim.on('video:out', ({y, data}) => crt.setLine(y, data));
-    sim.on('end', () => { setTimeout(() => crt.refresh(), 20); crt.stop(); });
-    /* Input */
-    var ival = window.setInterval(() => sim.process.stdin.write('-'), 100);
-    sim.on('end', () => window.clearInterval(ival));
+    var buttons = {
+        start: document.querySelector('#toolbar [name=start]'),
+        stop: document.querySelector('#toolbar [name=stop]')
+    };
+    device.sim.on('start', () => {
+        buttons.start.setAttribute('disabled', '');
+        buttons.stop.removeAttribute('disabled');
+    });
+    device.sim.on('end', () => {
+        buttons.start.removeAttribute('disabled');
+        buttons.stop.setAttribute('disabled', '');
+    });
+    buttons.start.addEventListener('click', () => device.start());
+    buttons.stop.addEventListener('click', () => device.stop());
 
-    /* Engage! */
-    await Promise.resolve();
-    sim.start("hw/stack-machine/blocks.bin");
-    console.log('%c-- simulation started --', 'color: #f55')
-    sim.on('end', () => console.log('%c-- simulation ended --', 'color: #f55'));
+    device.start();
 
-    Object.assign(window, {sim, crt});
+    Object.assign(window, {device, buttons});
 }
+
 
 document.addEventListener('DOMContentLoaded', main);

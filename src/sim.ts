@@ -10,6 +10,8 @@ const debug = require('debug')('Simulation');
 class Simulation extends EventEmitter {
     exe: string
     process: ChildProcess
+    binFn?: string
+    env?: EnvOpts = {}
 
     DEFAULT_OPTS: EnvOpts = {MAX_CYCLES: '0', DEBUG_CPU: '0'}
 
@@ -18,8 +20,11 @@ class Simulation extends EventEmitter {
         this.exe = exe;
     }
 
-    start(binFn?: string, env: EnvOpts = {}) {
+    start(binFn: string = this.binFn, env: EnvOpts = this.env) {
         env = {...this.DEFAULT_OPTS, ...env};
+        this.binFn = binFn;
+        this.env = env;
+        this.emit('start');
         this.process = spawn(this.exe, binFn ? [binFn] : [], {stdio: 'pipe', env});
         this.process.stdout.pipe(split2())
             .on('data', (ln: string) => this._processLine(ln));
@@ -28,8 +33,17 @@ class Simulation extends EventEmitter {
         this.process.on('exit', (code, signal) => {
             if (code || signal) console.error(`simulation terminated (code=${code}, signal=${signal})`);
             this.emit('end');
+            this.process = undefined;
         });
         window.addEventListener('beforeunload', () => this.process.kill('SIGINT'));
+    }
+
+    stop() {
+        this.process?.kill('SIGINT');
+    }
+
+    send(data: string) {
+        this.process?.stdin?.write(data);
     }
 
     _processLine(ln: string) {

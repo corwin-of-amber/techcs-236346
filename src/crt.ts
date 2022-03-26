@@ -15,6 +15,11 @@ class Crt {
         this.size = size;
     }
 
+    clear() {
+        var ctx = this.canvas.getContext('2d');
+        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);        
+    }
+
     setLine(y: number, pixels: BitSet) {
         this.pixelData[y] = pixels;
         this.dirtyY.add(y);
