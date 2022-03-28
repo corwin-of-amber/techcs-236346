@@ -1,4 +1,5 @@
-import BitSet from 'bitset';
+//import BitSet from 'bitset';
+import BitSet from './infra/bitset';
 import './crt.css';
 
 

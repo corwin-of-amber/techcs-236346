@@ -1,7 +1,7 @@
 import EventEmitter from 'events';
 import { ChildProcess, spawn } from 'child_process';
 import split2 from 'split2'; /* @kremlin.native */
-import BitSet from 'bitset';
+import BitSet from './infra/bitset';
 
 
 const debug = require('debug')('Simulation');
@@ -52,7 +52,7 @@ class Simulation extends EventEmitter {
         if (mo) {
             this.emit('video:out', {
                 y: parseInt(mo[1], 16), 
-                data: new BitSet([...mo[2]].reverse().join(''))  /* BitSet is MSB-first */
+                data: new BitSet(mo[2])
             });
         }
         if (ln.match(/^\[info\] /)) {
