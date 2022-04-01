@@ -36,6 +36,10 @@ class BitSet {
         return new Array(this.length).fill(0).map((_, i) => this.get(i)).join('');
     }
 
+    static from(json: {data: Uint32Array, length: number}) {
+        return new BitSet(json.data, json.length);
+    }
+
     static readonly WORDSIZE = 32
     static readonly LOG_WORDSIZE = 5
     static readonly MASK_WORDSIZE = BitSet.WORDSIZE - 1
