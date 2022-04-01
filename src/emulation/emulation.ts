@@ -103,7 +103,6 @@ class AsmInterpreter {
             break;
         case 3:  // mem_poke
             [ret_addr, value, addr] = this.pop(3);
-            console.log('^^^^ mem_poke', addr, value);
             this.mem.set(addr, value);
             break;
         default:
