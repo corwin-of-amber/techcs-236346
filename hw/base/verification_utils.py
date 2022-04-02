@@ -1,5 +1,6 @@
 from z3.z3util import get_vars
 from z3 import SolverFor, ForAll, Implies
+from presentation_forms import vertically, table_repr, Legend
 
 
 class CHCs:
@@ -14,6 +15,9 @@ class CHCs:
     def __iadd__(self, more_rules: list):
         self.rules += more_rules
         return self
+    
+    def _repr_html_(self):
+        return vertically(self.rules)._repr_html_()
     
     @property
     def freevars(self):
@@ -45,8 +49,6 @@ class CHCs:
 
 
     
-from presentation_forms import table_repr, Legend
-
 
 class HyperResolutionProof(object):
     """
