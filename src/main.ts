@@ -5,16 +5,15 @@ import { DeviceEmulator, Timer } from './device';
 import { WorkerWithEvents } from './infra/worker-ipc';
 import BitSet from './infra/bitset';
 // @ts-ignore
-import App from './components/main.vue';
+import App_ from './components/main.vue';
+import type { App } from './components/main';
+import './ide.css';
 
 
 function withProps<T>() { return <S>(s: S) => s as S & T; }
 
 async function main() {
-    var app = withProps<{
-        started: boolean,
-        device: DeviceEmulator
-    }>()(Vue.createApp(App).mount(document.body));
+    var app = withProps<App>()(Vue.createApp(App_).mount(document.body));
     
     var device = new DeviceEmulator(
         new Simulation("./ref/hw/cpu/bin/stack-machine"),
@@ -27,6 +26,8 @@ async function main() {
 
     device.start("ref/hw/cpu/blocks.bin");
     //asm_emu_main(device.crt);
+
+    app.open(BLOCK_WAIT);
 
     Object.assign(window, {device, app, BitSet});
 }
