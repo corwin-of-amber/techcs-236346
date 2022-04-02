@@ -1,35 +1,34 @@
+import Vue from 'vue';
 import { Crt } from './crt';
 import { Simulation } from './sim';
 import { DeviceEmulator, Timer } from './device';
 import { WorkerWithEvents } from './infra/worker-ipc';
 import BitSet from './infra/bitset';
+// @ts-ignore
+import App from './components/main.vue';
 
+
+function withProps<T>() { return <S>(s: S) => s as S & T; }
 
 async function main() {
+    var app = withProps<{
+        started: boolean,
+        device: DeviceEmulator
+    }>()(Vue.createApp(App).mount(document.body));
+    
     var device = new DeviceEmulator(
         new Simulation("./ref/hw/cpu/bin/stack-machine"),
-        new Crt(document.querySelector('#crt'))
+        new Crt((<any>app.$refs).crt)
     );
 
-    var buttons = {
-        start: document.querySelector('#toolbar [name=start]'),
-        stop: document.querySelector('#toolbar [name=stop]')
-    };
-    device.sim.on('start', () => {
-        buttons.start.setAttribute('disabled', '');
-        buttons.stop.removeAttribute('disabled');
-    });
-    device.sim.on('end', () => {
-        buttons.start.removeAttribute('disabled');
-        buttons.stop.setAttribute('disabled', '');
-    });
-    buttons.start.addEventListener('click', () => device.start());
-    buttons.stop.addEventListener('click', () => device.stop());
+    app.device = device;
+    device.sim.on('start', () => app.started = true);
+    device.sim.on('end', () => app.started = false);
 
-    //device.start("ref/hw/cpu/blocks.bin");
-    asm_emu_main(device.crt);
+    device.start("ref/hw/cpu/blocks.bin");
+    //asm_emu_main(device.crt);
 
-    Object.assign(window, {device, buttons, BitSet});
+    Object.assign(window, {device, app, BitSet});
 }
 
 function asm_emu_main(crt: Crt) {
