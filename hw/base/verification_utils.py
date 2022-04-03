@@ -1,5 +1,5 @@
 from z3.z3util import get_vars
-from z3 import SolverFor, ForAll, Implies
+from z3 import SolverFor, ForAll, Implies, BitVecSort, BitVecVal, K, Store
 from presentation_forms import vertically, table_repr, Legend
 
 
@@ -128,4 +128,9 @@ class HyperResolutionProof(object):
     def raw(self):
         return self._ast
 
-    
+
+def mk_bv_array(bitwidth, addrwidth, data):
+    a = K(BitVecSort(addrwidth), BitVecVal(0, bitwidth))
+    for i, d in enumerate(data):
+        a = Store(a, i, d)
+    return a
