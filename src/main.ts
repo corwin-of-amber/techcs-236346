@@ -46,7 +46,7 @@ function asm_emu_main(crt: Crt, asm: any) {
         crt.setLine(y, BitSet.from(data)));
 
     let timer = new Timer();
-    timer.start(25);
+    timer.start(100);
     timer.on('tick', () => worker.postMessage({type: 'input'}));
     worker.on('end', ev => {
         timer.stop();

@@ -124,6 +124,8 @@ class DisplayAdapter extends EventEmitter {
     baseAddr = 0xa000
     height = 256
 
+    memo: BitSet[] = []
+
     constructor(mem: Memory) {
         super();
         this.mem = mem;
@@ -135,8 +137,17 @@ class DisplayAdapter extends EventEmitter {
         }
     }
 
+    scanForced() {
+        this.memo = [];
+        this.scan();
+    }
+
     scanLine(y: number) {
-        this.emit('video:out', {y, data: this.getLine(y)});
+        var data = this.getLine(y);
+        if (!(this.memo[y]?.equals(data))) {
+            this.memo[y] = data;
+            this.emit('video:out', {y, data});
+        }
     }
 
     getLine(y: number) {

@@ -9,6 +9,7 @@
         "@codemirror/basic-setup": "^0.19.3",
         "@codemirror/state": "^0.19.9",
         "@codemirror/view": "^0.19.48",
+        "array-equal": "^1.0.0",
         "debug": "^4.3.3",
         "split2": "^4.1.0",
         "vue": "^3.2.31"

@@ -29,7 +29,7 @@ async function main(startup: StartupOptions) {
         if ((i & 0x3fff) == 0) { disp.scan(); await _yield(); }
     }
 
-    disp.scan();
+    disp.scanForced();
     postMessage({type: 'end', ev: {ncycles: i}});
 }
 

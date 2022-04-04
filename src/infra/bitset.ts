@@ -1,3 +1,4 @@
+import arreq from 'array-equal';
 
 /**
  * Sorry but the standard BitSet sucks
@@ -34,6 +35,10 @@ class BitSet {
 
     toString() {
         return new Array(this.length).fill(0).map((_, i) => this.get(i)).join('');
+    }
+
+    equals(other: BitSet) {
+        return this.length === other.length && arreq(this.data, other.data);
     }
 
     static from(json: {data: Uint32Array, length: number}) {
