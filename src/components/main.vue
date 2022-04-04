@@ -50,7 +50,8 @@ export default {
         this.device = null; // need to be initialized from class
     },
     methods: {
-        open(resource) { this.$refs.editor.open(resource); }
+        open(resource) { this.$refs.editor.open(resource); },
+        source() { return this.$refs.editor.state.doc.toString(); }
     },
     components: { Toolbar, Editor }
 }

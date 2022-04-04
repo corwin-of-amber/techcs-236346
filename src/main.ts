@@ -2,6 +2,7 @@ import Vue from 'vue';
 import { Crt } from './crt';
 import { Simulation } from './sim';
 import { DeviceEmulator, Timer } from './device';
+import { Assembler } from './emulation/assembler';
 import { WorkerWithEvents } from './infra/worker-ipc';
 import BitSet from './infra/bitset';
 // @ts-ignore
@@ -24,18 +25,23 @@ async function main() {
     device.sim.on('start', () => app.started = true);
     device.sim.on('end', () => app.started = false);
 
-    device.start("ref/hw/cpu/blocks.bin");
-    //asm_emu_main(device.crt);
+    //device.start("ref/hw/cpu/blocks.bin");
+    //
 
-    app.open(BLOCK_WAIT);
+    var progAsm = await (await fetch('/ref/sw/compiler/simple-progs.asm')).text();
+
+    var asm = new Assembler();
+    app.open(progAsm); //asm.unparseJson(SQUARE));
+
+    asm_emu_main(device.crt, [...asm.parseText(app.source())]);
 
     Object.assign(window, {device, app, BitSet});
 }
 
-function asm_emu_main(crt: Crt) {
+function asm_emu_main(crt: Crt, asm: any) {
     let worker = new WorkerWithEvents('worker.js');
     crt.start(25);
-    worker.postMessage({type: 'start', ev: {asm: SQUARE}});
+    worker.postMessage({type: 'start', ev: {asm}});
     worker.on('video:out', ({y, data}) =>
         crt.setLine(y, BitSet.from(data)));
 

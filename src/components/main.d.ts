@@ -5,4 +5,5 @@ export interface App {
     device: DeviceEmulator
 
     open(resource: any): void
+    source(): string
 }
