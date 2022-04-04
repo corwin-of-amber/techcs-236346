@@ -6,13 +6,13 @@
 <script>
 import { EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
-import { basicSetup } from '@codemirror/basic-setup';
+import setup from './editor-setup';
 
 export default {
     created() {
         this.config = {
             state: {
-                extensions: [basicSetup]
+                extensions: [setup]
             }
         };
     },
