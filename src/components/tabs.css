@@ -1,0 +1,52 @@
+
+.tabs-component {
+    display: flex;
+    flex-direction: column;
+}
+
+ul.tabs-component-tabs {
+    display: flex;
+    flex-direction: row;
+    margin: 0;
+    padding: 0 0 0 1em;
+    background: #eee;
+    font-family: sans-serif;
+    font-size: 80%;
+}
+
+li.tabs-component-tab {
+    list-style: none;
+    margin: 0;
+    display: inline-block;    
+    padding: 0;
+    border-left: 1px solid transparent;
+    border-right: 1px solid transparent;
+}
+
+li.tabs-component-tab.is-active {
+    background: #fff;
+    /* fancy stuff */
+    border-radius: 8px 8px 0 0;
+    border-left: 1px solid #DAE0E7;
+    border-right: 1px solid #DAE0E7;
+    border-top: 1px solid #DAE0E7; 
+    box-shadow: -1px -1px 2px 0px #dae0e7;
+}
+
+li.tabs-component-tab > a {
+    display: block;
+    padding: 5px 8px;
+    text-decoration: none;
+    color: #333;
+}
+
+.tabs-component-panels {
+    flex-basis: 1px;
+    flex-grow: 1;
+    flex-shrink: 1;
+    overflow: hidden;
+}
+
+.tabs-component-panel {
+    height: 100%;
+}

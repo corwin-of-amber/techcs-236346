@@ -3,12 +3,19 @@
     </div>
 </template>
 
+<style scoped>
+div :deep(.cm-lineNumbers .cm-gutterElement) {
+    min-width: 3em !important;
+}
+</style>
+
 <script>
 import { EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import setup from './editor-setup';
 
 export default {
+    props: ['name'],
     created() {
         this.config = {
             state: {

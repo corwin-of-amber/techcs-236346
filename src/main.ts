@@ -28,12 +28,14 @@ async function main() {
     //device.start("ref/hw/cpu/blocks.bin");
     //
 
-    var progAsm = await (await fetch('/ref/sw/compiler/simple-progs.asm')).text();
+    var progAsm = await (await fetch('/ref/sw/compiler/simple-progs.asm')).text(),
+        progIr = await (await fetch('/ref/sw/compiler/simple-progs.ir')).text();
+    await app.open('prog.asm', progAsm);
+    await app.open('prog.ir', progIr);
 
     var asm = new Assembler();
-    app.open(progAsm); //asm.unparseJson(SQUARE));
 
-    asm_emu_main(device.crt, [...asm.parseText(app.source())]);
+    asm_emu_main(device.crt, [...asm.parseText(app.getSource('prog.asm'))]);
 
     Object.assign(window, {device, app, BitSet});
 }

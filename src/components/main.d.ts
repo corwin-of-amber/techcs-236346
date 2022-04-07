@@ -4,6 +4,6 @@ export interface App {
     started: boolean
     device: DeviceEmulator
 
-    open(resource: any): void
-    source(): string
+    open(name: string, resource: any): Promise<void>
+    getSource(name: string): string
 }
