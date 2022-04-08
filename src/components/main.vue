@@ -61,15 +61,21 @@ export default {
             else    this.editors.delete(name);
         },
         async open(name, resource, focus = (this.tabs.length == 0)) {
-            this.tabs.push(name);
-            await Promise.resolve();  // let editor get created
+            if (!this.editors?.get(name)) {
+                this.tabs.push(name);
+                await Promise.resolve();  // allow editor to get created
+            }
             if (focus)
                 this.$refs.tabs.selectTab('#' + name);
             this.editors.get(name).open(resource);
         },
-        getSource(name) {
+        getSource(name = this.currentTab()) {
             var ed = this.editors.get(name);
             return ed?.state.doc.toString() ?? '';
+        },
+        currentTab() {
+            var h = this.$refs.tabs.activeTabHash;
+            return h && h.replace(/^#/, '');
         }
     },
     components: { Tabs, Tab, Toolbar, Editor }

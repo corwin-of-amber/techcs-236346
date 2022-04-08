@@ -19,10 +19,11 @@ async function main(startup: StartupOptions) {
 
     interp.stack.push(-1);
     disp.on('video:out', (ev) => postMessage({type: 'video:out', ev}));
-    let c = 0;
+    let c = 0, term = false;
     dispatch.on('input', () => { interp.mem.set(0xc001, ++c); })
+    dispatch.on('terminate', () => term = true);
 
-    for (var i = 0; i < opts.maxCycles && !interp.exit; i++) {
+    for (var i = 0; i < opts.maxCycles && !interp.exit && !term; i++) {
         if (opts.trace)
             console.trace(interp.pc, interp.code[interp.pc], interp.r, interp.stack);
         interp.step();

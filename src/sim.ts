@@ -64,4 +64,4 @@ class Simulation extends EventEmitter {
 type EnvOpts = {MAX_CYCLES?: string, DEBUG_CPU?: string};
 
 
-export { Simulation }
+export { Simulation, EnvOpts }

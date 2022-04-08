@@ -3,12 +3,14 @@ import { Crt } from './crt';
 import { Simulation } from './sim';
 import { DeviceEmulator, Timer } from './device';
 import { Assembler } from './emulation/assembler';
+import { CompilerBackend } from './ide/compiler';
 import { WorkerWithEvents } from './infra/worker-ipc';
 import BitSet from './infra/bitset';
 // @ts-ignore
 import App_ from './components/main.vue';
 import type { App } from './components/main';
 import './ide.css';
+import { Emulation } from './emulation/emulation';
 
 
 function withProps<T>() { return <S>(s: S) => s as S & T; }
@@ -25,37 +27,57 @@ async function main() {
     device.sim.on('start', () => app.started = true);
     device.sim.on('end', () => app.started = false);
 
+    document.body.addEventListener('keydown', ev => {
+        if (ev.key === 'Enter' && ev.metaKey) {
+            compileAndRun(app);
+            ev.preventDefault();
+        }
+    });
+
     //device.start("ref/hw/cpu/blocks.bin");
     //
 
     var progAsm = await (await fetch('/ref/sw/compiler/simple-progs.asm')).text(),
         progIr = await (await fetch('/ref/sw/compiler/simple-progs.ir')).text();
-    await app.open('prog.asm', progAsm);
-    await app.open('prog.ir', progIr);
-
-    var asm = new Assembler();
-
-    asm_emu_main(device.crt, [...asm.parseText(app.getSource('prog.asm'))]);
+    //await app.open('prog.asm', progAsm);
+    await app.open('prog.ir', progIr, true);
+    //compileAndRun(app);
 
     Object.assign(window, {device, app, BitSet});
 }
 
-function asm_emu_main(crt: Crt, asm: any) {
-    let worker = new WorkerWithEvents('worker.js');
+async function compileAndRun(app: App, prog?: string) {
+    var comp = new CompilerBackend(),
+        asm = new Assembler();
+
+    var s = await comp.compile(app.getSource(prog));
+    app.open('prog.asm', s);
+    asm_emu_main(app, [...asm.parseText(s)]);
+}
+
+function asm_emu_main(app: App, asm: any) {
+    let //worker = new WorkerWithEvents('worker.js'),
+        emul = new Emulation(),
+        crt = app.device.crt;
     crt.start(25);
-    worker.postMessage({type: 'start', ev: {asm}});
-    worker.on('video:out', ({y, data}) =>
-        crt.setLine(y, BitSet.from(data)));
+    emul.start(asm);
+    //worker.postMessage({type: 'start', ev: {asm}});
+    emul.on('video:out', ({y, data}) =>
+        crt.setLine(y, data)); //BitSet.from(data)));
 
     let timer = new Timer();
     timer.start(100);
-    timer.on('tick', () => worker.postMessage({type: 'input'}));
-    worker.on('end', ev => {
+    timer.on('tick', () => emul.send('-')); //worker.postMessage({type: 'input'}));
+    emul.on('end', ev => {
         timer.stop();
         crt.stop(); crt.refresh();
         console.log('# cycles:', ev.ncycles);
         console.log('-- end --');
+        app.started = false;
     });
+
+    app.started = true;
+    app.device.sim = emul;
 }
 
 const BLOCK = ["block", ["DUP", 1], ["PUSH", 1], ["POP", 2], ["ALU", "AND"], ["POP", 1], ["JZ", "block:0"], ["PUSH", 65280], ["JMP", "block:1"], "block:0", ["PUSH", 255], "block:1", ["PUSH", "block:2"], ["PUSH", 40960], ["PUSH", 128], ["DUP", 4], ["POP", 2], ["ALU", "MUL"], ["POP", 2], ["ALU", "ADD"], ["DUP", 4], ["PUSH", 1], ["POP", 2], ["ALU", "SHR"], ["POP", 2], ["ALU", "ADD"], ["PUSH", 16], ["PUSH", 8], ["DUP", 4], ["JMP", "memor_skip"], "block:2", ["YANK", [1, 1]], ["YANK", [1, 2]], ["POP", 2], ["RET", 1], "memor_skip", ["PUSH", 0], ["DUP", 2], ["POP", 2], ["ALU", "LT"], ["POP", 1], ["JZ", "memor_skip:0"], ["PUSH", "memor_skip:1"], ["DUP", 1], ["PUSH", "memor_skip:2"], ["DUP", 6], ["JMP", "mem_peek"], "memor_skip:2", ["POP", 2], ["ALU", "OR"], ["DUP", 5], ["JMP", "mem_poke"], "memor_skip:1", ["DUP", 4], ["DUP", 4], ["POP", 2], ["ALU", "ADD"], ["DUP", 4], ["DUP", 4], ["PUSH", 1], ["POP", 2], ["ALU", "SUB"], ["DUP", 4], ["YANK", [4, 5]], ["JMP", "memor_skip"], ["JMP", "memor_skip:3"], "memor_skip:0", ["PUSH", 0], "memor_skip:3", ["YANK", [1, 4]], ["POP", 2], ["RET", 1]];
