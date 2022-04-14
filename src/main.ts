@@ -1,16 +1,22 @@
 import Vue from 'vue';
 import { Crt } from './crt';
 import { Simulation } from './sim';
-import { DeviceEmulator, Timer } from './device';
+import { DeviceEmulator } from './device';
 import { Assembler } from './emulation/assembler';
 import { CompilerBackend } from './ide/compiler';
-import { WorkerWithEvents } from './infra/worker-ipc';
+import { Emulation } from './emulation';
 import BitSet from './infra/bitset';
 // @ts-ignore
 import App_ from './components/main.vue';
 import type { App } from './components/main';
 import './ide.css';
-import { Emulation } from './emulation/emulation';
+
+
+
+const STARTUP_SETTINGS = {
+    "csim": "hw/cpu/bin/csim",
+    "bin": "hw/cpu/blocks.bin"
+};
 
 
 function withProps<T>() { return <S>(s: S) => s as S & T; }
@@ -23,25 +29,33 @@ async function main() {
         new Crt((<any>app.$refs).crt)
     );
 
+    app.ready = false;
     app.device = device;
+    /*
     device.sim.on('start', () => app.started = true);
     device.sim.on('end', () => app.started = false);
+    */
 
     document.body.addEventListener('keydown', ev => {
         if (ev.key === 'Enter' && ev.metaKey) {
             compileAndRun(app);
             ev.preventDefault();
+            ev.stopPropagation();
         }
-    });
+    }, {capture: true});
 
     //device.start("ref/hw/cpu/blocks.bin");
     //
 
+    var settings = STARTUP_SETTINGS;
+
     var progAsm = await (await fetch('/ref/sw/compiler/simple-progs.asm')).text(),
         progIr = await (await fetch('/ref/sw/compiler/simple-progs.ir')).text();
     //await app.open('prog.asm', progAsm);
-    await app.open('prog.ir', progIr, true);
+    await app.open('prog.ir', progIr, {focus: true});
     //compileAndRun(app);
+
+    await app.open('settings.json', JSON.stringify(settings, null, 2), {at: 'start'});
 
     Object.assign(window, {device, app, BitSet});
 }
@@ -50,34 +64,28 @@ async function compileAndRun(app: App, prog?: string) {
     var comp = new CompilerBackend(),
         asm = new Assembler();
 
-    var s = await comp.compile(app.getSource(prog));
+    app.ready = false;
+    app.log(`Compiling ${prog ?? app.currentTab()}`)
+    await new Promise(resolve => setTimeout(resolve, 25)); // some `child_process` pain
+
+    try {
+        var s = await comp.compile(app.getSource(prog));
+        app.log(`Compiled prog.asm`)
+    }
+    finally { app.ready = !!app.device; }
     app.open('prog.asm', s);
-    asm_emu_main(app, [...asm.parseText(s)]);
+    
+    run(app, [...asm.parseText(s)]);
 }
 
-function asm_emu_main(app: App, asm: any) {
-    let //worker = new WorkerWithEvents('worker.js'),
-        emul = new Emulation(),
-        crt = app.device.crt;
-    crt.start(25);
-    emul.start(asm);
-    //worker.postMessage({type: 'start', ev: {asm}});
-    emul.on('video:out', ({y, data}) =>
-        crt.setLine(y, data)); //BitSet.from(data)));
+function run(app: App, asm: any) {
+    let emul = new Emulation();
 
-    let timer = new Timer();
-    timer.start(100);
-    timer.on('tick', () => emul.send('-')); //worker.postMessage({type: 'input'}));
-    emul.on('end', ev => {
-        timer.stop();
-        crt.stop(); crt.refresh();
-        console.log('# cycles:', ev.ncycles);
-        console.log('-- end --');
-        app.started = false;
-    });
-
-    app.started = true;
-    app.device.sim = emul;
+    app.ready = true;
+    app.device = new DeviceEmulator(emul, app.device.crt);
+    app.device.sim.on('start', () => app.started = true);
+    app.device.sim.on('end', () => app.started = false);
+    app.device.start(asm);
 }
 
 const BLOCK = ["block", ["DUP", 1], ["PUSH", 1], ["POP", 2], ["ALU", "AND"], ["POP", 1], ["JZ", "block:0"], ["PUSH", 65280], ["JMP", "block:1"], "block:0", ["PUSH", 255], "block:1", ["PUSH", "block:2"], ["PUSH", 40960], ["PUSH", 128], ["DUP", 4], ["POP", 2], ["ALU", "MUL"], ["POP", 2], ["ALU", "ADD"], ["DUP", 4], ["PUSH", 1], ["POP", 2], ["ALU", "SHR"], ["POP", 2], ["ALU", "ADD"], ["PUSH", 16], ["PUSH", 8], ["DUP", 4], ["JMP", "memor_skip"], "block:2", ["YANK", [1, 1]], ["YANK", [1, 2]], ["POP", 2], ["RET", 1], "memor_skip", ["PUSH", 0], ["DUP", 2], ["POP", 2], ["ALU", "LT"], ["POP", 1], ["JZ", "memor_skip:0"], ["PUSH", "memor_skip:1"], ["DUP", 1], ["PUSH", "memor_skip:2"], ["DUP", 6], ["JMP", "mem_peek"], "memor_skip:2", ["POP", 2], ["ALU", "OR"], ["DUP", 5], ["JMP", "mem_poke"], "memor_skip:1", ["DUP", 4], ["DUP", 4], ["POP", 2], ["ALU", "ADD"], ["DUP", 4], ["DUP", 4], ["PUSH", 1], ["POP", 2], ["ALU", "SUB"], ["DUP", 4], ["YANK", [4, 5]], ["JMP", "memor_skip"], ["JMP", "memor_skip:3"], "memor_skip:0", ["PUSH", 0], "memor_skip:3", ["YANK", [1, 4]], ["POP", 2], ["RET", 1]];

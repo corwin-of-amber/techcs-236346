@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { AsmInterpreter, DisplayAdapter } from "./emulation";
+import { AsmInterpreter, DisplayAdapter } from "./peripherals";
 
 
 type StartupOptions = {asm: any} & Options;

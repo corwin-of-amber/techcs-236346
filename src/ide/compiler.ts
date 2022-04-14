@@ -1,5 +1,5 @@
 import child_process from 'child_process';
-import concat from 'concat-stream';
+import concat from 'concat-stream'; /** @kremlin.native */
 
 /**
  * Runs the external (Python-based) compiler.

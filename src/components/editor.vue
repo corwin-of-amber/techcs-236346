@@ -24,9 +24,9 @@ export default {
         };
     },
     mounted() {
-        this.state = this.newState("");
+        var state = this.newState("");
         this.view = new EditorView({
-            state: this.state,
+            state,
             parent: this.$refs.container
         });
     },
@@ -37,8 +37,10 @@ export default {
         open(resource) {
             if (typeof resource !== 'string')
                 resource = JSON.stringify(resource, null, 2);
-            this.state = this.newState(resource);
-            this.view.setState(this.state);
+            this.view.setState(this.newState(resource));
+        },
+        get() {
+            return this.view.state.doc.toString();
         }
     }
 }

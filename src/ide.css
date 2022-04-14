@@ -6,3 +6,39 @@ html, body {
 * {
     box-sizing: border-box;
 }
+
+/* Editor layout */
+
+.pane--editor {
+    display: flex;
+    flex-direction: column;
+}
+
+.pane--editor .tabs-component,
+.pane--editor .editor-container,
+.pane--editor .cm-editor {
+    height: 100%;
+}
+
+/* Device pane layout */
+
+.pane--device {
+    display: flex;
+    flex-direction: column;
+}
+
+.pane--device .log {
+    flex-basis: 0;
+    flex-grow: 1;
+    font-size: 10pt;
+    line-height: 12.5pt;
+    padding: 0.5em;
+}
+
+.pane--device .log th.timestamp {
+    font-weight: 100;
+    font-size: 9pt;
+    line-height: 12.5pt;
+    font-family: times;
+    color: #666;
+}

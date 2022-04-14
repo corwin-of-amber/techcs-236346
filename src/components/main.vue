@@ -4,6 +4,7 @@
             <canvas ref="crt" id="crt" width="256" height="256"></canvas>
             <toolbar :ready="ready" :started="started"
                 @start="device?.start()" @stop="device?.stop()"/>
+            <log ref="log" :entries="logEntries"></log>
         </div>
         <div class="pane pane--editor expand">
             <tabs ref="tabs">
@@ -27,30 +28,21 @@
     flex-grow: 1;
     overflow: hidden;
 }
-.pane--editor {
-    display: flex;
-    flex-direction: column;
-}
 
 @import './tabs.css';
-
-.pane--editor .tabs-component,
-.pane--editor :deep(.editor-container),
-.pane--editor :deep(.cm-editor) {
-    height: 100%;
-}
 </style>
 
 <script>
-import {Tabs, Tab} from 'vue3-tabs-component';
+import { Tabs, Tab } from 'vue3-tabs-component';
 import Toolbar from './toolbar.vue';
 import Editor from './editor.vue';
+import Log from './log.vue';
 
 import './tabs.css'; /** @oops Kremlin ignores `@import` in <style> tags */
 
 
 export default {
-    data: () => ({ready: true, started: false, tabs: []}),
+    data: () => ({ready: true, started: false, tabs: [], logEntries: []}),
     mounted() {
         this.device = null; // need to be initialized from class
     },
@@ -60,24 +52,28 @@ export default {
             if (el) this.editors.set(name, el);
             else    this.editors.delete(name);
         },
-        async open(name, resource, focus = (this.tabs.length == 0)) {
+        async open(name, resource, opts = {focus: this.tabs.length == 0, at: 'end'}) {
             if (!this.editors?.get(name)) {
                 this.tabs.push(name);
                 await Promise.resolve();  // allow editor to get created
+                if (opts.at === 'start')
+                    this.$refs.tabs.tabs.unshift(this.$refs.tabs.tabs.pop());
             }
-            if (focus)
+            if (opts.focus)
                 this.$refs.tabs.selectTab('#' + name);
             this.editors.get(name).open(resource);
         },
         getSource(name = this.currentTab()) {
-            var ed = this.editors.get(name);
-            return ed?.state.doc.toString() ?? '';
+            return this.editors.get(name)?.get() ?? '';
         },
         currentTab() {
             var h = this.$refs.tabs.activeTabHash;
             return h && h.replace(/^#/, '');
+        },
+        log(text) {
+            this.logEntries.push({timestamp: new Date(), text});
         }
     },
-    components: { Tabs, Tab, Toolbar, Editor }
+    components: { Tabs, Tab, Toolbar, Editor, Log }
 }
 </script>

@@ -13,6 +13,7 @@
         "concat-stream": "^2.0.0",
         "debug": "^4.3.3",
         "split2": "^4.1.0",
+        "strftime": "^0.10.1",
         "vue": "^3.2.31",
         "vue3-tabs-component": "^1.0.5"
     }
