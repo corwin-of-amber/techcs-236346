@@ -1,9 +1,9 @@
-.PHONY: FORCE
+.PHONY: FORCE clean
 
 MODE = PyRTL-C
 
-CC = clang
-CXX = clang++
+CC = gcc
+CXX = g++
 
 CFLAGS = -O3 -Iobj
 CXXFLAGS = $(CFLAGS) -std=c++11 -DNO_DEBUG_MEM
@@ -36,3 +36,6 @@ obj/%.o: simulate/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 obj/csim_main.o: obj/csim.h
+
+clean:
+	rm -rf obj/*.o bin/csim
