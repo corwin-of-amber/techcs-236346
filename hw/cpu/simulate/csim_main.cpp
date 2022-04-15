@@ -36,13 +36,33 @@ void CPU::step() {
 }
 
 bool CPU::is_halted() const {
+#ifdef _has_signal_out_d_instr
     return (outputs.d_instr & 0xf) == 0xf;
+#else
+    return false;
+#endif
 }
 
 void CPU::dump_regs() const {
+#if defined(_has_signal_out_d_pc) || defined(_has_signal_out_d_sp) || \
+    defined(_has_signal_out_d_r0) && defined(_has_signal_out_d_r1) || \
+    defined(_has_signal_out_d_instr)
     auto& o = outputs;
-    std::cout << Word(o.d_pc) << " " << Word(o.d_sp) << " " << Word(o.d_r0) << " " << Word(o.d_r1)
-              << "  " << Word(o.d_instr, 8) << std::endl;
+    std::cout 
+#ifdef _has_signal_out_d_pc
+        << Word(o.d_pc) << " "
+#endif
+#ifdef _has_signal_out_d_sp
+        << Word(o.d_sp) << " " 
+#endif
+#if defined(_has_signal_out_d_r0) && defined(_has_signal_out_d_r1)
+        << Word(o.d_r0) << " " << Word(o.d_r1)
+#endif
+#ifdef _has_signal_out_d_instr
+        << "  " << Word(o.d_instr, 8) 
+#endif
+        << std::endl;
+#endif
 }
 
 
@@ -63,15 +83,23 @@ private:
 };
 
 uint16_t GPIO::serial_get_seq() const {
+#ifdef _has_signal_out_gpio_out
     return (out_pins.gpio_out >> 16) & 0xffff;
+#else
+    return 0xbeef;
+#endif
 }
 
 void GPIO::serial_send(uint16_t data, uint16_t seq) {
+#ifdef _has_signal_in_gpio_in
     in_pins.gpio_in = (uint32_t(seq) << 16) | data;
+#endif
 }
 
 void GPIO::serial_send(uint16_t data) {
+#ifdef _has_signal_in_gpio_in
     serial_send(data, (in_pins.gpio_in >> 16) + 1);
+#endif
 }
 
 
@@ -149,6 +177,7 @@ public:
         return true;
     }
 
+#if defined(_has_signal_out_vid_out) && defined(_has_signal_out_vid_y)
     void out() {
         std::cout << Word(out_pins.vid_y, 2) << "|";
         bit_line(std::cout, out_pins.vid_out, WORDS_PER_ROW);
@@ -160,6 +189,10 @@ public:
             out();
         }
     }
+#else
+    void out() { }
+    void tick() { }
+#endif
 
     static const size_t WORDS_PER_ROW = 4;
 };
@@ -215,7 +248,7 @@ public:
 
 
 int main(int argc, char *argv[]) {
-    const char *bin_filename = argc > 1 ? argv[1] : "blocks.bin";
+    const char *bin_filename = argc > 1 ? argv[1] : NULL;
     const char *env_debug_cpu = getenv("DEBUG_CPU");
     const char *env_debug_mem = getenv("DEBUG_MEM");
     const char *env_out_display = getenv("OUT_DISPLAY");
@@ -231,7 +264,8 @@ int main(int argc, char *argv[]) {
     
     CPU cpu;
     GPIO gpio(cpu.inputs, cpu.outputs);
-    GPIOBinUpload gpio_upload(gpio, bin_filename);
+    GPIOBinUpload *gpio_upload =
+        bin_filename ? new GPIOBinUpload(gpio, bin_filename) : NULL;
     GPIOInput gpio_input(gpio);
     gpio_input.start_thread();
     
@@ -246,9 +280,9 @@ int main(int argc, char *argv[]) {
             cpu.dump_regs();
             /* @todo debug mem */
         }
-        if (!gpio_upload.is_finished()) {
-            gpio_upload.tick();
-            if (gpio_upload.is_finished()) {
+        if (gpio_upload && !gpio_upload->is_finished()) {
+            gpio_upload->tick();
+            if (gpio_upload->is_finished()) {
                 std::cout << std::dec
                     << "[info] Loaded executable binary: " << wall.elapsed_millis() << "ms" << std::endl;
             }
@@ -264,6 +298,7 @@ int main(int argc, char *argv[]) {
               << std::hex;
     
     /* Flush the display */
+#if defined(_has_signal_out_vid_out) && defined(_has_signal_out_vid_y)
     if (out_display) {
         int bar = 0;
 
@@ -273,6 +308,7 @@ int main(int argc, char *argv[]) {
             if (bar == 1) display.out();
         }
     }
+#endif
     
     return 0;
 }

@@ -2,7 +2,8 @@
 node_modules
 .ipynb_checkpoints
 __pycache__
-/hw/stack-machine
+bin
+obj
 /build
 
 _npmlink
