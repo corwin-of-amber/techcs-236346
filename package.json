@@ -3,7 +3,7 @@
     "version": "0.1.0",
     "main": "build/kremlin/index.html",
     "scripts": {
-        "pack:prebuilt": "COPYFILE_DISABLE=1 tar zcf a2sui.tar.gz build/kremlin/index.html build/kremlin/include.js build/kremlin/bundle.js build/kremlin/*.css",
+        "pack:prebuilt": "COPYFILE_DISABLE=1 tar zcf build/kremlin/a2sui.tar.gz build/kremlin/index.html build/kremlin/include.js build/kremlin/bundle.js build/kremlin/*.css",
         "build": "kremlin index.html",
         "build:prod": "kremlin --prod index.html",
         "dist": "npm run build:prod && npm run pack:prebuilt",
