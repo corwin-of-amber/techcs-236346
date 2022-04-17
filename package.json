@@ -3,15 +3,17 @@
     "version": "0.1.0",
     "main": "build/kremlin/index.html",
     "scripts": {
-        "pack:prebuilt": "tar zcf a2sui.tar.gz build/kremlin/index.html build/kremlin/include.js build/kremlin/bundle.js build/kremlin/*.css",
+        "pack:prebuilt": "COPYFILE_DISABLE=1 tar zcf a2sui.tar.gz build/kremlin/index.html build/kremlin/include.js build/kremlin/bundle.js build/kremlin/*.css",
         "build": "kremlin index.html",
         "build:prod": "kremlin --prod index.html",
         "dist": "npm run build:prod && npm run pack:prebuilt",
         "start": "npx nw",
-        "download": "rm -f a2sui.tar.gz && wget https://adder2snake.vercel.app/a2sui.tar.gz && tar xf a2sui.tar.gz"
+        "download": "node etc/download_prebuilt.mjs"
     },
     "devDependencies": {
-        "@types/node": "^17.0.21"
+        "@types/node": "^17.0.21",
+        "node-fetch": "^3.2.3",
+        "tar": "^6.1.11"
     },
     "dependencies": {
         "@codemirror/basic-setup": "^0.19.3",
