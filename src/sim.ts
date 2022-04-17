@@ -33,12 +33,14 @@ class Simulation extends EventEmitter {
             .on('data', (ln: string) => this._processLine(ln));
         this.process.stderr.pipe(split2())
             .on('data', (ln: string) => this.log('error', ln));
-        this.process.on('exit', (code, signal) => {
+        this.process.on('exit', async (code, signal) => {
             if (code || signal) this.log('error', `simulation terminated (code=${code}, signal=${signal})`);
+            await when_stdout_done;
             this.log('phase', '-- simulation ended --');
             this.emit('end');
             this.process = undefined;
         });
+        var when_stdout_done = new Promise(r => this.process.stdout.on('end', r));
         window.addEventListener('beforeunload', () => this.process.kill('SIGINT'));
     }
 
