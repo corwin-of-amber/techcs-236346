@@ -14,8 +14,13 @@ import './ide.css';
 
 
 const STARTUP_SETTINGS = {
+    "mode": "csim",
     "csim": "hw/cpu/bin/csim",
-    "bin": "hw/cpu/blocks.bin"
+    "bin": "hw/cpu/blocks.bin",
+    "env": {
+        "DEBUG_CPU": 0,
+        "MAX_CYCLES": 1000
+    }
 };
 
 
@@ -31,14 +36,17 @@ async function main() {
 
     app.ready = false;
     app.device = device;
-    /*
     device.sim.on('start', () => app.started = true);
     device.sim.on('end', () => app.started = false);
-    */
+
+    app.device.sim.on('log', ({level, message}) => app.log(level, message));
 
     document.body.addEventListener('keydown', ev => {
         if (ev.key === 'Enter' && ev.metaKey) {
-            compileAndRun(app);
+            try{
+                start(app);
+            }
+            catch (e) { app.log('error', e.toString()); }
             ev.preventDefault();
             ev.stopPropagation();
         }
@@ -49,15 +57,44 @@ async function main() {
 
     var settings = STARTUP_SETTINGS;
 
-    var progAsm = await (await fetch('/ref/sw/compiler/simple-progs.asm')).text(),
-        progIr = await (await fetch('/ref/sw/compiler/simple-progs.ir')).text();
+    //var progAsm = await (await fetch('/ref/sw/compiler/simple-progs.asm')).text(),
+    //    progIr = await (await fetch('/ref/sw/compiler/simple-progs.ir')).text();
     //await app.open('prog.asm', progAsm);
-    await app.open('prog.ir', progIr, {focus: true});
+    //await app.open('prog.ir', progIr, {focus: true});
     //compileAndRun(app);
 
     await app.open('settings.json', JSON.stringify(settings, null, 2), {at: 'start'});
 
+    window.addEventListener('beforeunload', () => app.persist());
+
     Object.assign(window, {device, app, BitSet});
+}
+
+function start(app: App) {
+    var fn = app.currentTab() ?? '';
+    if (fn.endsWith('.json')) {  /* simulation settings file */
+        runCSimulation(app, fn);
+    }
+    else if (fn.endsWith('.asm')) {  /* StASM file */
+        /** @todo */
+    }
+    else if (fn.endsWith('.ir')) {  /* StaML IR file */
+        /** @todo */
+    }
+}
+
+function runCSimulation(app: App, fn?: string) {
+    app.clearLog();
+    var settings = parseSettings(app.getSource(fn));
+    app.ready = true;
+    app.device.sim.exe = settings.csim;
+    app.device.start(null, settings.env);
+}
+
+function parseSettings(settings: string) {
+    // strip comments
+    settings = settings.replace(/\/\/.*/g, '');
+    return JSON.parse(settings);
 }
 
 async function compileAndRun(app: App, prog?: string) {

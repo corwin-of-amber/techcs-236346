@@ -32,7 +32,10 @@ html, body {
     flex-grow: 1;
     font-size: 10pt;
     line-height: 12.5pt;
-    padding: 0.5em;
+    padding: 0.5em 0;
+    width: 1px;         /* make log stretch as wide as the canvas, but not more */
+    min-width: 100%;
+    overflow: auto;
 }
 
 .pane--device .log th.timestamp {
@@ -41,4 +44,16 @@ html, body {
     line-height: 12.5pt;
     font-family: times;
     color: #666;
+}
+
+.pane--device .log .log--entry.phase {
+    color: #f55;
+}
+
+.pane--device .log .log--entry.error {
+    color: red;
+}
+
+.pane--device .log .log--entry.info {
+    color: #55f;
 }

@@ -10,7 +10,7 @@ class Emulation extends Simulation {
         super('');
     }
 
-    start(binFn: string = this.binFn, env: EnvOpts = this.env) {
+    async start(binFn: string = this.binFn, env: EnvOpts = this.env) {
         this.binFn = binFn;
         this.env = env;
         this.emit('start');

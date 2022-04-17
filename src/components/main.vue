@@ -43,8 +43,9 @@ import './tabs.css'; /** @oops Kremlin ignores `@import` in <style> tags */
 
 export default {
     data: () => ({ready: true, started: false, tabs: [], logEntries: []}),
-    mounted() {
+    created() {
         this.device = null; // need to be initialized from class
+        this.load();
     },
     methods: {
         registerEditor(name, el) {
@@ -52,7 +53,9 @@ export default {
             if (el) this.editors.set(name, el);
             else    this.editors.delete(name);
         },
-        async open(name, resource, opts = {focus: this.tabs.length == 0, at: 'end'}) {
+        async open(name, resource, opts = {focus: undefined, at: 'end', override: false}) {
+            opts.focus ??= this.tabs.length == 0;
+            opts.at ??= 'end';
             if (!this.editors?.get(name)) {
                 this.tabs.push(name);
                 await Promise.resolve();  // allow editor to get created
@@ -61,6 +64,8 @@ export default {
             }
             if (opts.focus)
                 this.$refs.tabs.selectTab('#' + name);
+            if (!opts.override)
+                resource = this.stored.get(name) ?? resource;
             this.editors.get(name).open(resource);
         },
         getSource(name = this.currentTab()) {
@@ -70,8 +75,21 @@ export default {
             var h = this.$refs.tabs.activeTabHash;
             return h && h.replace(/^#/, '');
         },
-        log(text) {
-            this.logEntries.push({timestamp: new Date(), text});
+        log(level, text) {
+            text ?? (text = level, level = 'info');
+            this.logEntries.push({timestamp: new Date(), text, level});
+            this.$refs.log.scrollToBottom();
+        },
+        clearLog() {
+            this.logEntries = [];
+        },
+        load() {
+            this.stored = new Map(JSON.parse(localStorage['editors'] || '[]'));
+        },
+        persist() {
+            localStorage['editors'] = JSON.stringify(
+                [...this.editors.entries()].map(([k, v]) => [k, v.get()])
+            );
         }
     },
     components: { Tabs, Tab, Toolbar, Editor, Log }

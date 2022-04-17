@@ -20,18 +20,22 @@ class Simulation extends EventEmitter {
         this.exe = exe;
     }
 
-    start(binFn: string = this.binFn, env: EnvOpts = this.env) {
+    async start(binFn: string = this.binFn, env: EnvOpts = this.env) {
         env = {...this.DEFAULT_OPTS, ...env};
         this.binFn = binFn;
         this.env = env;
         this.emit('start');
+        this.log('phase', '-- simulation started --');
+        await new Promise(r => setTimeout(r, 10));  /* spawn lag issue */
         this.process = spawn(this.exe, binFn ? [binFn] : [], {stdio: 'pipe', env});
+        this.process.on('error', e => this.log('error', e.toString()));
         this.process.stdout.pipe(split2())
             .on('data', (ln: string) => this._processLine(ln));
         this.process.stderr.pipe(split2())
-            .on('data', (ln: string) => console.error(ln));
+            .on('data', (ln: string) => this.log('error', ln));
         this.process.on('exit', (code, signal) => {
-            if (code || signal) console.error(`simulation terminated (code=${code}, signal=${signal})`);
+            if (code || signal) this.log('error', `simulation terminated (code=${code}, signal=${signal})`);
+            this.log('phase', '-- simulation ended --');
             this.emit('end');
             this.process = undefined;
         });
@@ -56,8 +60,16 @@ class Simulation extends EventEmitter {
             });
         }
         if (ln.match(/^\[info\] /)) {
-            console.log(`%c${ln}`, 'color: blue');
+            this.log('info', ln);
         }
+    }
+
+    log(level: 'info' | 'error' | 'phase', message: string) {
+        this.emit('log', {level, message});
+        if (level === 'error')
+            console.error(message);
+        else
+            console.log(`%c${message}`, {'phase': 'color: #f55'}[level] ?? 'color: blue');
     }
 }
 

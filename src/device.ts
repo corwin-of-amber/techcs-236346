@@ -23,7 +23,6 @@ class DeviceEmulator {
         this.timer.start(100);
         await Promise.resolve();
         this.sim.start(binFn, env);
-        console.log('%c-- simulation started --', 'color: #f55')
     }
 
     stop() {
@@ -33,7 +32,6 @@ class DeviceEmulator {
     cleanup() {
         this.crt.stop();    setTimeout(() => this.crt.refresh(), 20); 
         this.timer.stop();
-        console.log('%c-- simulation ended --', 'color: #f55');
     }
 }
 
