@@ -6,5 +6,6 @@ bin
 obj
 /build
 /*.tar.gz
+.vercel
 
 _npmlink
