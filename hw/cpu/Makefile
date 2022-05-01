@@ -14,7 +14,7 @@ VTRFLAGS = -O3 -CFLAGS -O3
 ifeq ($(MODE),PyRTL-C)
 bin/csim: obj/csim.o obj/csim_main.o
 	@mkdir -p $(@D)
-	$(CXX) -o $@ $+
+	$(CXX) -pthread -o $@ $+
 endif
 
 ifeq ($(MODE),Verilator)
