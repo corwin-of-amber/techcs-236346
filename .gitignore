@@ -2,6 +2,7 @@
 node_modules
 .ipynb_checkpoints
 __pycache__
+.DS_Store
 bin
 obj
 /build

@@ -2,11 +2,12 @@
     <div class="split-panes">
         <div class="pane pane--device">
             <canvas ref="crt" id="crt" width="256" height="256"></canvas>
-            <toolbar :ready="ready" :started="started"
+            <device-toolbar :ready="ready" :started="started"
                 @start="device?.start()" @stop="device?.stop()"/>
             <log ref="log" :entries="logEntries"></log>
         </div>
         <div class="pane pane--editor expand">
+            <editor-toolbar @run="$emit('run')"/>
             <tabs ref="tabs">
                 <tab v-for="tab in tabs" :key="tab" :name="tab">
                     <editor :ref="el => registerEditor(tab, el)"/>
@@ -23,10 +24,17 @@
 }
 .split-panes > .pane {
     height: 100%;
+    position: relative;
 }
 .split-panes > .pane.expand {
     flex-grow: 1;
     overflow: hidden;
+}
+
+#editor-toolbar {
+    position: absolute;
+    left: 0;
+    top: 0;
 }
 
 @import './tabs.css';
@@ -34,7 +42,8 @@
 
 <script>
 import { Tabs, Tab } from 'vue3-tabs-component';
-import Toolbar from './toolbar.vue';
+import EditorToolbar from './toolbars/editor-toolbar.vue';
+import DeviceToolbar from './toolbars/device-toolbar.vue';
 import Editor from './editor.vue';
 import Log from './log.vue';
 
@@ -92,6 +101,6 @@ export default {
             );
         }
     },
-    components: { Tabs, Tab, Toolbar, Editor, Log }
+    components: { Tabs, Tab, EditorToolbar, DeviceToolbar, Editor, Log }
 }
 </script>

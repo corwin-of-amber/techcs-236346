@@ -4,8 +4,8 @@
     "main": "build/kremlin/index.html",
     "scripts": {
         "pack:prebuilt": "COPYFILE_DISABLE=1 tar zcf build/kremlin/a2sui.tar.gz build/kremlin/index.html build/kremlin/include.js build/kremlin/bundle.js build/kremlin/*.css",
-        "build": "kremlin index.html",
-        "build:prod": "kremlin --prod index.html",
+        "build": "kremlin index.html src/emulation/worker.ts",
+        "build:prod": "kremlin --prod index.html src/emulation/worker.ts",
         "dist": "npm run build:prod && npm run pack:prebuilt",
         "start": "npx nw",
         "download": "node etc/download_prebuilt.mjs"

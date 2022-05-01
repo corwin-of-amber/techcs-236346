@@ -1,5 +1,5 @@
 <template>
-    <div id="toolbar">
+    <div id="device-toolbar" class="toolbar">
         <button name="start" :disabled="!(ready && !started)" @click="action">Start</button>
         <button name="stop" :disabled="!(ready && started)" @click="action">Stop</button>
     </div>  

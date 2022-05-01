@@ -27,7 +27,7 @@ const STARTUP_SETTINGS = {
 function withProps<T>() { return <S>(s: S) => s as S & T; }
 
 async function main() {
-    var app = withProps<App>()(Vue.createApp(App_).mount(document.body));
+    var app = withProps<App>()(Vue.createApp(App_, {onRun}).mount(document.body));
     
     var device = new DeviceEmulator(
         new Simulation("./ref/hw/cpu/bin/stack-machine"),
@@ -41,12 +41,16 @@ async function main() {
 
     app.device.sim.on('log', ({level, message}) => app.log(level, message));
 
+    function onRun() {
+        try {
+            start(app);
+        }
+        catch (e) { app.log('error', e.toString()); }
+    }
+
     document.body.addEventListener('keydown', ev => {
-        if (ev.key === 'Enter' && ev.metaKey) {
-            try{
-                start(app);
-            }
-            catch (e) { app.log('error', e.toString()); }
+        if (ev.key === 'Enter' && (ev.metaKey || ev.ctrlKey)) {
+            onRun();
             ev.preventDefault();
             ev.stopPropagation();
         }
