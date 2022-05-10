@@ -1,0 +1,96 @@
+/*
+main =
+    let l = 11, h = 20
+    horiz l (h + 1) l;
+    vert h (l + 1) (h + 1);
+    horiz (h - 1) l h;
+    vert l h l
+*/
+main(0) =
+    11; 20;
+    ignore horiz $-1 ($-2 + 1) $-1;
+    ignore vert  $-2 ($-1 + 1) ($-2 + 1);
+    ignore horiz ($-2 - 1) $-1 $-2;
+    ignore vert  $-1 $-2 $-1;
+    0
+    
+memset_skip(4) =
+    if 0 < $1 then mem_poke $0 $3; .memset_skip ($3 + $2) $2 ($1 - 1) $0 else 0
+    
+/*
+# memor_skip start skip cnt value : unit =
+#   if 0 < cnt then mem_poke (value | mem_peek(start)) start;
+#                   memor_skip (start + skip) skip (cnt - 1) value
+#              else ()
+*/
+memor_skip(4) =
+    if 0 < $1 then mem_poke ($0 | mem_peek $3) $3; .memor_skip ($3 + $2) $2 ($1 - 1) $0 else 0
+
+/*
+# wait () : u16 =
+#  let seq = mem_peek 0xc001
+#  let aux () =
+#    if (mem_peek 0xc001) == seq then aux ()
+#    else (mem_peek 0xc000)
+#  aux ()
+*/
+wait(0) = mem_peek 0xc001; wait_aux
+wait_aux(0) = 
+    if (mem_peek 0xc001) - $1 /* < access closure */
+    then mem_peek 0xc000 else .wait_aux
+
+/*
+# block x y =
+#   let mask = (x & 1 ? 0xff00 : 0x00ff) in 
+#   memor_skip (0xa000 + 0x80 * y + (x >> 1)) 0x10 0x08 mask
+*/
+block(2) =
+    (if $1 & 1 then 0xff00 else 0x00ff);
+    memor_skip (0xa000 + 0x80 * $0 + ($1 >> 1)) 0x10 0x08 $-1
+
+/*
+# memor_shr_skip start skip cnt value shft : unit =
+#   if 0 < cnt then mem_poke ((value << shft) | mem_peek(start)) start;
+#                   memor_shr_skip (start + skip) skip (cnt - 1) (value >> 1)
+#              else ()
+*/
+memor_skip_shr(5) =
+    if 0 < $2 then ignore mem_poke (($1 << $0) | mem_peek $4) $4;
+                   memor_skip_shr ($4 + $3) $3 ($2 - 1) ($1 >> 1) $0
+              else 0
+
+/*
+# memor_shl_skip start skip cnt value shft : unit =
+#   if 0 < cnt then mem_poke ((value >> shft) | mem_peek(start)) start;
+#                   memor_shr_skip (start + skip) skip (cnt - 1) (value << 1)
+#              else ()
+*/
+memor_skip_shl(5) =
+    if 0 < $2 then ignore mem_poke (($1 >> $0) | mem_peek $4) $4;
+                   memor_skip_shl ($4 + $3) $3 ($2 - 1) ($1 << 1) $0
+              else 0
+
+/* horiz x0 x1 y  */
+horiz(3) =
+    (if $2 < $1 then 1 else (if $1 < $2 then 0xffff else 0));
+    if $-1 then ignore block $2 $0; ignore wait; .horiz ($2 + $-1) $1 $0
+           else 0
+
+/* vert x y0 y1  */
+vert(3) =
+    (if $1 < $0 then 1 else (if $0 < $1 then 0xffff else 0));
+    if $-1 then ignore block $2 $1; ignore wait; .vert $2 ($1 + $-1) $0
+           else 0
+
+/* skewed_l x y  */
+skewed_l(2) =
+    if $1 & 1 then ignore memor_shr_skip (0xa000 + 0x80 * $0 + ($1 >> 1)) 0x10 0x08 0xff00 8;
+                   memor_shr_skip (0xa001 + 0x80 * $0 + ($1 >> 1)) 0x10 0x08 0xff 0
+              else memor_shr_skip (0xa000 + 0x80 * $0 + ($1 >> 1)) 0x10 0x08 0xff00 0
+
+/* skewed_r x y  */
+skewed_r(2) =
+    if $1 & 1 then ignore memor_shl_skip (0xa000 + 0x80 * $0 + ($1 >> 1)) 0x10 0x08 0xff00 0;
+                   memor_shl_skip (0xa001 + 0x80 * $0 + ($1 >> 1)) 0x10 0x08 0xff 8
+              else memor_shl_skip (0xa000 + 0x80 * $0 + ($1 >> 1)) 0x10 0x08 0x00ff 0
+              
