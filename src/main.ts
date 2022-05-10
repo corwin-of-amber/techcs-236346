@@ -92,7 +92,7 @@ function runCSimulation(app: App, fn?: string) {
     var settings = parseSettings(app.getSource(fn));
     app.ready = true;
     app.device.sim.exe = settings.csim;
-    app.device.start(null, settings.env);
+    app.device.start(settings.bin, settings.env);
 }
 
 function parseSettings(settings: string) {

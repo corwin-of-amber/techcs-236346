@@ -123,7 +123,7 @@ GPIOBinUpload::GPIOBinUpload(GPIO& gpio, const char *bin_filename)
     : gpio(gpio), next_seq(0), _is_finished(false)
 {
     bin = fopen(bin_filename, "r");
-    if (bin == 0) { perror("fopen"); exit(1); }
+    if (bin == 0) { perror("fopen"); fprintf(stderr, "  (%s)\n", bin_filename); exit(1); }
 }
 
 void GPIOBinUpload::tick() {
