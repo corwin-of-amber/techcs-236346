@@ -1,4 +1,4 @@
-from pyrtl import Register, Output, concat, as_wires
+from pyrtl import Register, Input, Output, concat, as_wires
 
 
 # Video adapter
