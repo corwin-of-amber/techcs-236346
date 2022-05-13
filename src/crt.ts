@@ -1,5 +1,5 @@
-//import BitSet from 'bitset';
 import BitSet from './infra/bitset';
+import { Timer } from './device';
 import './crt.css';
 
 
@@ -9,11 +9,13 @@ class Crt {
 
     pixelData: BitSet[] = []
     dirtyY: Set<number> = new Set()
-    _refreshInterval: number
+    timer: Timer
 
     constructor(canvas: HTMLCanvasElement, size: XY = {x: 256, y: 256}) {
         this.canvas = canvas;
         this.size = size;
+        this.timer = new Timer();
+        this.timer.on('tick', () => this.refresh());
     }
 
     clear() {
@@ -39,12 +41,11 @@ class Crt {
     }
 
     start(fps=50) {
-        this._refreshInterval = window.setInterval(() => this.refresh(), 1000 / fps);
-        window.addEventListener('beforeunload', () => this.stop());
+        this.timer.start(1000 / fps);
     }
 
     stop() {
-        window.clearInterval(this._refreshInterval);
+        this.timer.stop();
     }
 }
 

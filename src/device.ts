@@ -13,7 +13,9 @@ class DeviceEmulator {
         this.crt = crt;
         this.timer = new Timer;
         this.sim.on('video:out', ({y, data}) => crt.setLine(y, data));
-        this.sim.on('end', () => this.cleanup());
+        this.sim.on('end', ({id}) => {
+            id === this.sim.currentId && this.cleanup();
+        });
         this.timer.on('tick', () => this.sim.send('-'))
     }
 
@@ -40,6 +42,7 @@ class Timer extends EventEmitter {
     ival: number
 
     start(every: number /*ms*/) {
+        this.stop();
         this.ival = window.setInterval(() => this.emit('tick'), every);
     }
 

@@ -12,6 +12,7 @@ class Simulation extends EventEmitter {
     process: ChildProcess
     binFn?: string
     env?: EnvOpts = {}
+    currentId = 0
 
     DEFAULT_OPTS: EnvOpts = {MAX_CYCLES: '0', DEBUG_CPU: '0'}
 
@@ -21,27 +22,34 @@ class Simulation extends EventEmitter {
     }
 
     async start(binFn: string = this.binFn, env: EnvOpts = this.env) {
+        if (this.process) this.stop();
+
         env = {...this.DEFAULT_OPTS, ...env};
         this.binFn = binFn;
         this.env = env;
+        var id = ++this.currentId;
         this.emit('start');
         this.log('phase', '-- simulation started --');
         await new Promise(r => setTimeout(r, 10));  /* spawn lag issue */
-        this.process = spawn(this.exe, binFn ? [binFn] : [], {stdio: 'pipe', env});
-        this.process.on('error', e => this.log('error', e.toString()));
-        this.process.stdout.pipe(split2())
+        var process = spawn(this.exe, binFn ? [binFn] : [], {stdio: 'pipe', env});
+        process.on('error', e => this.log('error', e.toString()));
+        process.stdout.pipe(split2())
             .on('data', (ln: string) => this._processLine(ln));
-        this.process.stderr.pipe(split2())
+        process.stderr.pipe(split2())
             .on('data', (ln: string) => this.log('error', ln));
-        this.process.on('exit', async (code, signal) => {
-            if (code || signal) this.log('error', `simulation terminated (code=${code}, signal=${signal})`);
+        process.on('exit', async (code, signal) => {
+            if (id === this.currentId && (code || signal))
+                this.log('error', `simulation terminated (code=${code}, signal=${signal})`);
             await when_stdout_done;
-            this.log('phase', '-- simulation ended --');
-            this.emit('end');
-            this.process = undefined;
+            if (id === this.currentId) {
+                this.log('phase', '-- simulation ended --');
+                this.process = undefined;
+            }
+            this.emit('end', {id});
         });
-        var when_stdout_done = new Promise(r => this.process.stdout.on('end', r));
-        window.addEventListener('beforeunload', () => this.process.kill('SIGINT'));
+        var when_stdout_done = new Promise(r => process.stdout.on('end', r));
+        window.addEventListener('beforeunload', () => process.kill('SIGINT'));
+        this.process = process;
     }
 
     stop() {
