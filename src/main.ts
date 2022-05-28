@@ -27,19 +27,23 @@ const STARTUP_SETTINGS = {
 function withProps<T>() { return <S>(s: S) => s as S & T; }
 
 async function main() {
-    var app = withProps<App>()(Vue.createApp(App_, {onRun}).mount(document.body));
+    var app = withProps<App>()(Vue.createApp(App_, {onRun})
+                .mount(document.body));
     
+    // This is a dummy device; should probably eliminate
     var device = new DeviceEmulator(
-        new Simulation("./ref/hw/cpu/bin/stack-machine"),
+        new Simulation("dummy"),
         new Crt((<any>app.$refs).crt)
     );
 
     app.ready = false;
     app.device = device;
+    /*
     device.sim.on('start', () => app.started = true);
     device.sim.on('end', () => app.started = false);
 
     app.device.sim.on('log', ({level, message}) => app.log(level, message));
+    */
 
     function onRun() {
         try {
@@ -80,18 +84,22 @@ function start(app: App) {
         runCSimulation(app, fn);
     }
     else if (fn.endsWith('.asm')) {  /* StASM file */
-        /** @todo */
+        /** @todo test this */
+        assembleAndRun(app, fn);
     }
     else if (fn.endsWith('.ir')) {  /* StaML IR file */
-        /** @todo */
+        /** @todo test this */
+        compileAndRun(app, fn);
     }
 }
 
 function runCSimulation(app: App, fn?: string) {
     app.clearLog();
-    var settings = parseSettings(app.getSource(fn));
+    var settings = parseSettings(app.getSource(fn)),
+        sim = new Simulation(settings.csim);
+
     app.ready = true;
-    app.device.sim.exe = settings.csim;
+    app.device = attachDevice(app, new DeviceEmulator(sim, app.device.crt));
     app.device.start(settings.bin, settings.env);
 }
 
@@ -107,7 +115,7 @@ async function compileAndRun(app: App, prog?: string) {
 
     app.ready = false;
     app.log(`Compiling ${prog ?? app.currentTab()}`)
-    await new Promise(resolve => setTimeout(resolve, 25)); // some `child_process` pain
+    await new Promise(resolve => setTimeout(resolve, 25)); // some `child_process` silliness
 
     try {
         var s = await comp.compile(app.getSource(prog));
@@ -119,14 +127,33 @@ async function compileAndRun(app: App, prog?: string) {
     run(app, [...asm.parseText(s)]);
 }
 
+async function assembleAndRun(app: App, prog?: string) {
+    var asm = new Assembler();
+
+    app.ready = false;
+    app.log(`Assembling ${prog ?? app.currentTab()}`);
+    try {
+        var s = asm.parseText(app.getSource(prog));
+    }
+    finally { app.ready = !!app.device; }
+
+    run(app, s);
+}
+
 function run(app: App, asm: any) {
+    app.clearLog();
     let emul = new Emulation();
 
     app.ready = true;
-    app.device = new DeviceEmulator(emul, app.device.crt);
-    app.device.sim.on('start', () => app.started = true);
-    app.device.sim.on('end', () => app.started = false);
+    app.device = attachDevice(app, new DeviceEmulator(emul, app.device.crt));
     app.device.start(asm);
+}
+
+function attachDevice(app: App, device: DeviceEmulator) {
+    device.sim.on('start', () => app.started = true);
+    device.sim.on('end', () => app.started = false);
+    device.sim.on('log', ({level, message}) => app.log(level, message));
+    return device;
 }
 
 const BLOCK = ["block", ["DUP", 1], ["PUSH", 1], ["POP", 2], ["ALU", "AND"], ["POP", 1], ["JZ", "block:0"], ["PUSH", 65280], ["JMP", "block:1"], "block:0", ["PUSH", 255], "block:1", ["PUSH", "block:2"], ["PUSH", 40960], ["PUSH", 128], ["DUP", 4], ["POP", 2], ["ALU", "MUL"], ["POP", 2], ["ALU", "ADD"], ["DUP", 4], ["PUSH", 1], ["POP", 2], ["ALU", "SHR"], ["POP", 2], ["ALU", "ADD"], ["PUSH", 16], ["PUSH", 8], ["DUP", 4], ["JMP", "memor_skip"], "block:2", ["YANK", [1, 1]], ["YANK", [1, 2]], ["POP", 2], ["RET", 1], "memor_skip", ["PUSH", 0], ["DUP", 2], ["POP", 2], ["ALU", "LT"], ["POP", 1], ["JZ", "memor_skip:0"], ["PUSH", "memor_skip:1"], ["DUP", 1], ["PUSH", "memor_skip:2"], ["DUP", 6], ["JMP", "mem_peek"], "memor_skip:2", ["POP", 2], ["ALU", "OR"], ["DUP", 5], ["JMP", "mem_poke"], "memor_skip:1", ["DUP", 4], ["DUP", 4], ["POP", 2], ["ALU", "ADD"], ["DUP", 4], ["DUP", 4], ["PUSH", 1], ["POP", 2], ["ALU", "SUB"], ["DUP", 4], ["YANK", [4, 5]], ["JMP", "memor_skip"], ["JMP", "memor_skip:3"], "memor_skip:0", ["PUSH", 0], "memor_skip:3", ["YANK", [1, 4]], ["POP", 2], ["RET", 1]];

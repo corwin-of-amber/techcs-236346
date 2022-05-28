@@ -1,8 +1,8 @@
 <template>
     <div class="split-panes">
-        <div class="pane pane--device">
+        <div class="pane pane--device" tabindex="0" @keydown="onKey" @keyup="unKey">
             <canvas ref="crt" id="crt" width="256" height="256"></canvas>
-            <device-toolbar :ready="ready" :started="started"
+            <device-toolbar :ready="ready" :started="started" :ckey="ckey"
                 @start="device?.start()" @stop="device?.stop()"/>
             <log ref="log" :entries="logEntries"></log>
         </div>
@@ -49,9 +49,13 @@ import Log from './log.vue';
 
 import './tabs.css'; /** @oops Kremlin ignores `@import` in <style> tags */
 
+const KEYS = {
+    'ArrowRight': '→', 'ArrowLeft': '←',
+    'ArrowUp': '↑', 'ArrowDown': '↓'
+};
 
 export default {
-    data: () => ({ready: true, started: false, tabs: [], logEntries: []}),
+    data: () => ({ready: true, started: false, ckey: undefined, tabs: [], logEntries: []}),
     created() {
         this.device = null; // need to be initialized from class
         this.load();
@@ -99,6 +103,20 @@ export default {
             localStorage['editors'] = JSON.stringify(
                 [...this.editors.entries()].map(([k, v]) => [k, v.get()])
             );
+        },
+        onKey(ev) {
+            var symbol = KEYS[ev.key];
+            if (symbol)
+                this.ckey = {value: symbol, down: true};
+            this.device.keyboard?.putc(ev);
+        },
+        unKey() {
+            var ckey = this.ckey;
+            if (ckey) {
+                ckey.down = false;
+                setTimeout(() => this.ckey === ckey &&
+                                 (this.ckey = undefined), 1000);
+            }
         }
     },
     components: { Tabs, Tab, EditorToolbar, DeviceToolbar, Editor, Log }

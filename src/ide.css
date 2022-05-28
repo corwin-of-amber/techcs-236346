@@ -27,6 +27,10 @@ html, body {
     flex-direction: column;
 }
 
+.pane--device:focus {
+    outline: none;
+}
+
 .pane--device .log {
     flex-basis: 0;
     flex-grow: 1;
