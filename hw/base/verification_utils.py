@@ -1,5 +1,5 @@
 from z3.z3util import get_vars
-from z3 import SolverFor, ForAll, Implies, BitVecSort, BitVecVal, K, Store
+from z3 import SolverFor, ForAll, Implies, BitVecSort, BitVecVal, K, Store, ArrayRef, IntSort
 from presentation_forms import vertically, table_repr, Legend
 
 
@@ -129,8 +129,30 @@ class HyperResolutionProof(object):
         return self._ast
 
 
-def mk_bv_array(bitwidth, addrwidth, data):
+def mk_bv_array(*a):
+    if len(a) == 2:
+        width_spec, data = a
+        if isinstance(width_spec, ArrayRef):
+            sort = width_spec.sort()
+            bitwidth, addrwidth = sort.range().size(), sort.domain().size()
+        else:
+            bitwidth, addrwidth = width_spec
+    elif len(a) == 3:
+        bitwidth, addrwidth, data = a
+    else:
+        raise TypeError(f"expected 2 or 3 arguments, {len(a)} given")
+        
+    return mk_bv_array_3(bitwidth, addrwidth, data)
+
+        
+def mk_bv_array_3(bitwidth, addrwidth, data):
     a = K(BitVecSort(addrwidth), BitVecVal(0, bitwidth))
+    for i, d in enumerate(data):
+        a = Store(a, i, d)
+    return a
+
+def mk_int_array(data):
+    a = K(IntSort(), 0)
     for i, d in enumerate(data):
         a = Store(a, i, d)
     return a
