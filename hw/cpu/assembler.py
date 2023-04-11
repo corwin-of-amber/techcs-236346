@@ -5,6 +5,7 @@ import instruction_set as isa
 
 class Assembly(namedtuple('Assembly', ['words', 'start_addr', 'label_addrs'])):
     def to_bin(self):
+        assert _array_sanity()  # ensure that 'I' marks 32-bit words
         return array.array('I', self.words).tobytes()
     def save_bin(self, filename='a.bin'):
         with open(filename, 'wb') as f:
@@ -60,6 +61,9 @@ def asm(l, start_addr=0x0):
 
 def disasm(l):
     from instruction_set import MNEMONICS as M
+    if isinstance(l, bytes):
+        assert _array_sanity()
+        l = array.array('I', l)
     return [(M.get(instr & 0xf, '??'), instr >> 4) for instr in l]
 
 def with_addr(l, start_addr=0):
@@ -73,6 +77,9 @@ def disasm_pretty(l, start_addr=0):
     for addr, (op, arg) in disasm_with_addr(l, start_addr):
         print("%04x %s %x" % (addr, op, arg))
 
+
+def _array_sanity():
+    return array.array('I', [0xdead]).tobytes() == b'\xad\xde\x00\x00'
 
 def chunk16(u32a):
     return [(u32 >> bi) & 0xffff for u32 in u32a for bi in [0, 16]]    
