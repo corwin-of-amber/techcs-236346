@@ -27,6 +27,7 @@ public:
     
     void step();
     void dump_regs() const;
+    void dump_mem() const;
     
     bool is_halted() const;
 };
@@ -65,6 +66,21 @@ void CPU::dump_regs() const {
 #endif
 }
 
+void CPU::dump_mem() const {
+#ifdef _has_signal_out_d_mem
+    auto& o = outputs;
+
+    std::cout << "    ";
+    const uint16_t *mem = (const uint16_t *)o.d_mem;
+    const size_t size_of_buffer = sizeof(o.d_mem);
+    size_t num_words = size_of_buffer / sizeof(uint16_t);
+    for (size_t i = 0; i < num_words; i++) {
+        if (i != 0 && i % 8 == 0) std::cout << std::endl << "    ";
+        std::cout << " " << Word(mem[i], 4);
+    }
+    std::cout << std::endl;
+#endif
+}
 
 class GPIO {
     
@@ -278,7 +294,7 @@ int main(int argc, char *argv[]) {
         cpu.step();
         if (debug_cpu) {
             cpu.dump_regs();
-            /* @todo debug mem */
+            cpu.dump_mem();
         }
         if (gpio_upload && !gpio_upload->is_finished()) {
             gpio_upload->tick();
@@ -287,7 +303,8 @@ int main(int argc, char *argv[]) {
                     << "[info] Loaded executable binary: " << wall.elapsed_millis() << "ms" << std::endl;
             }
         }
-        display.tick();
+        if (out_display)
+            display.tick();
     }
     
     auto wall_ms = wall.elapsed_millis();
