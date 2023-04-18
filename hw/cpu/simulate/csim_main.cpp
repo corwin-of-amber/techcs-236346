@@ -294,6 +294,8 @@ int main(int argc, char *argv[]) {
         cpu.step();
         if (debug_cpu) {
             cpu.dump_regs();
+        }
+        if (debug_mem) {
             cpu.dump_mem();
         }
         if (gpio_upload && !gpio_upload->is_finished()) {
