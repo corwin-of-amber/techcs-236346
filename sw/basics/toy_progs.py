@@ -11,6 +11,39 @@ SHL = [POP2, (ALU, _.SHL)]
 LT  = [POP2, (ALU, _.LT)]
 
 
+BLINK = [
+    # Draw cursor
+    *[[(PUSH, 0xff00), (PUSH, 0xa082 + 16 * i), POP2, STOR] for i in range(8)],
+    # Wait 4 ticks (GPIO)
+    (PUSH, 4),  # i
+    'loop1',
+    (PUSH, 0xc001), POP1, LOAD,    # c
+    'wait1',
+    DUP,
+    (PUSH, 0xc001), POP1, LOAD,
+    LT, POP1, (JZ, 'wait1'),
+    POP1,                          # /c
+    (PUSH, 1), SUB, DUP, POP1, (JNZ, 'loop1'),
+    POP1,    # /i
+    # Erase cursor
+    *[[(PUSH, 0x0000), (PUSH, 0xa082 + 16 * i), POP2, STOR] for i in range(8)],
+    # Wait 4 ticks (GPIO)
+    (PUSH, 4),  # i
+    'loop2',
+    (PUSH, 0xc001), POP1, LOAD,    # c
+    'wait2',
+    DUP,
+    (PUSH, 0xc001), POP1, LOAD,
+    LT, POP1, (JZ, 'wait2'),
+    POP1,                          # /c
+    (PUSH, 1), SUB, DUP, POP1, (JNZ, 'loop2'),
+    POP1,    # /i
+    # Repeat forever
+    (JMP, 0),
+    HALT
+]
+
+
 BLOCKS = [
     ('PUSH', 0x0f),
     # while i > 0
@@ -71,6 +104,5 @@ BLOCKS = [
     (PUSH, 1), SUB,
     (JMP, '_busy_wait:loop'),
     '_busy_wait:exit',
-    POP1, POP1, RET,
-    
+    POP1, POP1, RET,   
 ]
