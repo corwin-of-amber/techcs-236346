@@ -1,5 +1,5 @@
 import EventEmitter from 'events';
-import { ChildProcess, spawn } from 'child_process';
+import { ChildProcess, spawn, SpawnOptions } from 'child_process';
 import split2 from 'split2'; /* @kremlin.native */
 import BitSet from './infra/bitset';
 
@@ -11,14 +11,17 @@ class Simulation extends EventEmitter {
     exe: string
     process: ChildProcess
     binFn?: string
+    runnerExe?: string[]   // set to `wsl.exe` when using WSL
     env?: EnvOpts = {}
     currentId = 0
 
     DEFAULT_OPTS: EnvOpts = {MAX_CYCLES: '0', DEBUG_CPU: '0'}
 
-    constructor(exe: string) {
+    constructor(exe: string, opts: SimulationOptions = {}) {
         super();
         this.exe = exe;
+        if (opts.wsl ?? (process.platform === 'win32'))
+            this.runnerExe = [String.raw`C:\Windows\System32\wsl.exe`];
     }
 
     async start(binFn: string = this.binFn, env: EnvOpts = this.env) {
@@ -31,7 +34,7 @@ class Simulation extends EventEmitter {
         this.emit('start');
         this.log('phase', '-- simulation started --');
         await new Promise(r => setTimeout(r, 10));  /* spawn lag issue */
-        var process = spawn(this.exe, binFn ? [binFn] : [], {stdio: 'pipe', env});
+        var process = this._spawn(this.exe, binFn ? [binFn] : [], {stdio: 'pipe', env});
         process.on('error', e => this.log('error', e.toString()));
         process.stdout.pipe(split2())
             .on('data', (ln: string) => this._processLine(ln));
@@ -50,6 +53,18 @@ class Simulation extends EventEmitter {
         var when_stdout_done = new Promise(r => process.stdout.on('end', r));
         window.addEventListener('beforeunload', () => process.kill('SIGINT'));
         this.process = process;
+    }
+
+    _spawn(exe: string, args: string[], opts: SpawnOptions) {
+        if (this.runnerExe) {
+            args = [...this.runnerExe.slice(1), exe, ...args];
+            exe = this.runnerExe[0];
+            if (opts.env) {
+                /** @todo this is WSL-specific @@@ */
+                opts.env['WSLENV'] ??= Object.keys(opts.env).join(':');
+            }
+        }
+        return spawn(exe, args, opts);
     }
 
     stop() {
@@ -83,7 +98,8 @@ class Simulation extends EventEmitter {
     }
 }
 
-type EnvOpts = {MAX_CYCLES?: string, DEBUG_CPU?: string};
+type SimulationOptions = {wsl?: boolean};
+type EnvOpts = {MAX_CYCLES?: string, DEBUG_CPU?: string, DEBUG_MEM?: string};
 
 
 export { Simulation, EnvOpts }

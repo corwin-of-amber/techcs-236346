@@ -283,7 +283,8 @@ int main(int argc, char *argv[]) {
     GPIOBinUpload *gpio_upload =
         bin_filename ? new GPIOBinUpload(gpio, bin_filename) : NULL;
     GPIOInput gpio_input(gpio);
-    gpio_input.start_thread();
+    if (!gpio_upload)
+        gpio_input.start_thread();  /* otherwise this is deferred to after upload finishes */
     
     DisplayAdapter display(cpu.outputs);
     
@@ -303,6 +304,7 @@ int main(int argc, char *argv[]) {
             if (gpio_upload->is_finished()) {
                 std::cout << std::dec
                     << "[info] Loaded executable binary: " << wall.elapsed_millis() << "ms" << std::endl;
+                gpio_input.start_thread();
             }
         }
         if (out_display)

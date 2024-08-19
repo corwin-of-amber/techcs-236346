@@ -14,10 +14,10 @@ const URI = 'https://adder2snake.vercel.app/a2sui.tar.gz',
 async function main() {
     console.log('📦 Downloading ' + URI);
     let resp = await fetch(URI);
-    const dest = fs.createWriteStream(TAR_FN);
-    resp.body.pipe(dest);
+    const dest = fs.createWriteStream(TAR_FN),
+          download = resp.body.pipe(dest);
     await new Promise((resolve, reject) => {
-        resp.body.on("end", () => resolve("it worked"));
+        download.on("close", () => resolve("it worked"));
         dest.on("error", reject);
     });
     var cnt = 0;

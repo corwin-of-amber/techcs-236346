@@ -96,7 +96,7 @@ function start(app: App) {
 function runCSimulation(app: App, fn?: string) {
     app.clearLog();
     var settings = parseSettings(app.getSource(fn)),
-        sim = new Simulation(settings.csim);
+        sim = new Simulation(settings.csim, {wsl: settings.wsl});
 
     app.ready = true;
     app.device = attachDevice(app, new DeviceEmulator(sim, app.device.crt));
