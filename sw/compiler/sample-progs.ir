@@ -54,9 +54,9 @@ block(2) =
 #                   memor_shr_skip (start + skip) skip (cnt - 1) (value >> 1)
 #              else ()
 */
-memor_skip_shr(5) =
+memor_shr_skip(5) =
     if 0 < $2 then ignore mem_poke (($1 << $0) | mem_peek $4) $4;
-                   memor_skip_shr ($4 + $3) $3 ($2 - 1) ($1 >> 1) $0
+                   memor_shr_skip ($4 + $3) $3 ($2 - 1) ($1 >> 1) $0
               else 0
 
 /*
@@ -65,9 +65,9 @@ memor_skip_shr(5) =
 #                   memor_shr_skip (start + skip) skip (cnt - 1) (value << 1)
 #              else ()
 */
-memor_skip_shl(5) =
+memor_shl_skip(5) =
     if 0 < $2 then ignore mem_poke (($1 >> $0) | mem_peek $4) $4;
-                   memor_skip_shl ($4 + $3) $3 ($2 - 1) ($1 << 1) $0
+                   memor_shl_skip ($4 + $3) $3 ($2 - 1) ($1 << 1) $0
               else 0
 
 /* horiz x0 x1 y  */
