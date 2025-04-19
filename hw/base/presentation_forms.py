@@ -15,7 +15,7 @@ class table_repr:
             data = (data,)
         return f'<tr>{"".join(self._td(v, i) for i, v in enumerate(data))}</tr>'
     def _repr_html_(self):
-        return f'<table style="background: white">{"".join(map(self._tr, self.rows))}</table>'
+        return f'<table style="background: white; color: black">{"".join(map(self._tr, self.rows))}</table>'
 
 
 def vertically(iter):

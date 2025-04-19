@@ -47,6 +47,9 @@ class AsmInterp:
                 ip = self.r0
                 continue
 
+            elif op == "HALT":
+                break
+
             else:
                 self.execute(op, arg)
 

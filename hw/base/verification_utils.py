@@ -1,5 +1,7 @@
 from z3.z3util import get_vars
-from z3 import SolverFor, ForAll, Implies, BitVecSort, BitVecVal, K, Store, ArrayRef, IntSort
+from z3 import SolverFor, ForAll, Implies, BitVecSort, BitVecVal, \
+               K, Store, ArrayRef, IntSort, \
+               FuncInterp, is_func_decl, substitute_vars, sat, unsat
 from presentation_forms import vertically, table_repr, Legend
 
 
@@ -43,12 +45,52 @@ class CHCs:
         for phi in self.to_quantified(): s.add(phi)
         return s
     
+    def solve(self, params={}, theory="HORN", engine=None):
+        s = self.create_solver(theory, engine)
+        for k, v in params.items():
+            s.set(k, v)
+        res = s.check()
+        if res == sat:
+            return Solution(s.model())
+        elif res == unsat:
+            try:
+                return HyperResolutionProof(s.proof())
+            except:
+                return res   # proof is turned off
+        else:
+            return res
+    
     @classmethod
     def query(cls, q):
         return [Implies(q, False)]
 
 
+class Solution:
+    class Predicate:
+        def __init__(self, interp: FuncInterp):
+            self.interp = interp
+        def __call__(self, *args):
+            assert self.interp.num_entries() == 0
+            return substitute_vars(self.interp.else_value(), *args)
+        def _get(self):
+            it = self.interp
+            return it.else_value() if it.num_entries() == 0 else it
+        def __repr__(self): return repr(self._get())
+        def _repr_html_(self): return self._get()._repr_html_()
+
+    def __init__(self, model):
+        self.model = model
+
+    def __getitem__(self, v):
+        if is_func_decl(v):
+            return self.Predicate(self.model[v])
+        else:
+            return self.model.eval(v)
     
+    def __repr__(self): return repr(self.model)
+    def _repr_html_(self):
+        return table_repr([[d, self[d]] for d in self.model.decls()])._repr_html_()
+
 
 class HyperResolutionProof(object):
     """
