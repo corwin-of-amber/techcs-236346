@@ -3,6 +3,7 @@ from z3 import SolverFor, ForAll, Implies, BitVecSort, BitVecVal, \
                K, Store, ArrayRef, IntSort, \
                FuncInterp, is_func_decl, substitute_vars, sat, unsat
 from presentation_forms import vertically, table_repr, Legend
+import boilerplate
 
 
 class CHCs:
@@ -58,7 +59,7 @@ class CHCs:
             except:
                 return res   # proof is turned off
         else:
-            return res
+            return (res, s.reason_unknown())
     
     @classmethod
     def query(cls, q):
@@ -162,8 +163,8 @@ class HyperResolutionProof(object):
         trep.col_styles[0] = 'width: 20%'
         return trep
 
-    def _repr_svg_(self):
-        return self.to_dot()._repr_svg_()
+    def _repr_html_(self):
+        return self.to_roadmap()._repr_html_()
 
     def __str__(self):
         return str(self.to_dot())
