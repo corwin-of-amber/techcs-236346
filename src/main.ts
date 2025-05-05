@@ -64,14 +64,15 @@ async function main() {
     //
 
     var settings = STARTUP_SETTINGS;
+    await app.open('settings.json', JSON.stringify(settings, null, 2), {at: 'start'});
+
+    await app.open('prog.asm', '');
 
     //var progAsm = await (await fetch('/ref/sw/compiler/simple-progs.asm')).text(),
     //    progIr = await (await fetch('/ref/sw/compiler/simple-progs.ir')).text();
     //await app.open('prog.asm', progAsm);
     //await app.open('prog.ir', progIr, {focus: true});
     //compileAndRun(app);
-
-    await app.open('settings.json', JSON.stringify(settings, null, 2), {at: 'start'});
 
     window.addEventListener('beforeunload', () => app.persist());
 
@@ -133,7 +134,7 @@ async function assembleAndRun(app: App, prog?: string) {
     app.ready = false;
     app.log(`Assembling ${prog ?? app.currentTab()}`);
     try {
-        var s = asm.parseText(app.getSource(prog));
+        var s = [...asm.parseText(app.getSource(prog))];
     }
     finally { app.ready = !!app.device; }
 

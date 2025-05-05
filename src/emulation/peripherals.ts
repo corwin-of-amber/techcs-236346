@@ -3,6 +3,7 @@ import { EventEmitter } from 'events';
 import BitSet from '../infra/bitset';
 
 
+/** @todo why is this here? it should be in `assembler.ts` */
 class AsmInterpreter {
     code: AsmLine
     func: string
@@ -25,8 +26,8 @@ class AsmInterpreter {
             [func, 0],
             ['mem_peek', -2],
             ['mem_poke', -3],
-            ...code.map((instr, i) => typeof instr === 'string' ? [instr, i] as [string, number] : undefined)
-                    .filter(x => x)
+            ...code.flatMap((instr, i) => typeof instr === 'string' ?
+                [[instr, i] as [string, number]] : [])
         ]);
     }
 
@@ -34,7 +35,10 @@ class AsmInterpreter {
         if (this.pc < 0) { this.extern(-this.pc); return; }
         
         var instr = this.code[this.pc];
-        if (typeof instr !== 'string') {  /* skip labels */
+        if (instr === undefined) {
+            this.exit = true;
+        }
+        else if (typeof instr !== 'string') {  /* skip labels */
             var [op, arg] = instr;
             
             if (op != 'ALU' && typeof arg === 'string')
@@ -46,6 +50,8 @@ class AsmInterpreter {
             case 'POP':  this.r = this.pop(arg); break;
             case 'ALU':  this.stack.push(this.alu(arg)); break;
             case 'YANK': this.yank(...(arg as [number, number])); break;
+            case 'LOAD': this.stack.push(this.load(this.r[0])); break;
+            case 'STOR': this.stor(this.r[0], this.r[1]); break;
             case 'JZ':
                 if (this.r[0] == 0) { this.pc = arg; return; }
                 break;
@@ -91,6 +97,14 @@ class AsmInterpreter {
     yank(take: number, drop: number) {
         assert(take > 0 && drop > 0);
         this.stack.splice(-(take + drop), drop);
+    }
+
+    load(addr: number) {
+        return this.mem.get(addr) ?? 0;
+    }
+
+    stor(value: number, addr: number) {
+        this.mem.set(addr, value);
     }
 
     extern(fcode: number) {

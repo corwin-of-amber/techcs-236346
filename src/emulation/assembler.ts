@@ -7,8 +7,8 @@ class Assembler {
      * Does not check semantics.
      */
     *parseText(text: string) {
-        var mo: RegExpMatchArray;
-        for (let mo of text.matchAll(/[^\n]+/g)) {
+        var mo: RegExpMatchArray | RegExpExecArray;
+        for (mo of text.matchAll(/[^\n]+/g)) {
             let line = mo[0].trim();
             if (mo = line.match(/(\S+)\s+(.*)/)) {
                 let [, opcode, arg] = mo, num = parseInt(arg),
