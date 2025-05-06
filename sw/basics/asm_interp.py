@@ -10,6 +10,8 @@ class AsmInterp:
         self.memory = array('H')  # unsigned 16-bit words
         self.labels = {}
 
+        self.trace = False
+
     def execute_program(self, instructions):
         self._index_labels(instructions)
         ip = 0
@@ -21,10 +23,14 @@ class AsmInterp:
                 ip += 1
                 continue
 
-            if isinstance(instr, tuple):
-                assert len(instr) in [1, 2]
-                op = instr[0].upper()
-                arg = instr[1] if len(instr) > 1 else None
+            assert isinstance(instr, tuple)
+            assert len(instr) in [1, 2]
+            op = instr[0].upper()
+            arg = instr[1] if len(instr) > 1 else None
+
+            if self.trace:
+                print(' ' * 20, [self.r0, self.r1], self.stack)
+                print(ip, op, arg)
 
             if op == "JMP":
                 ip = self._jump_to_label(arg)
@@ -43,7 +49,7 @@ class AsmInterp:
             elif op == "RET":
                 flag = int(arg)
                 if flag == 1:
-                    self.stack.append(arg)
+                    self.stack.append(self.r1)
                 ip = self.r0
                 continue
 
@@ -60,9 +66,8 @@ class AsmInterp:
         for idx, line in enumerate(instructions):
             if isinstance(line, str):
                 line = line.strip()
-                if line.endswith(':'):
-                    label = line[:-1]
-                    self.labels[label] = idx + 1
+                label = line[:-1] if line.endswith(':') else line
+                self.labels[label] = idx + 1
 
     def _jump_to_label(self, label):
         if label not in self.labels:
@@ -71,7 +76,10 @@ class AsmInterp:
 
     def execute(self, op, arg):
         if op == "PUSH":
-            value = int(arg) & 0xFFFF
+            if isinstance(arg, int):
+                value = int(arg) & 0xFFFF
+            else:
+                value = self.labels[arg]
             self.stack.append(value)
 
         elif op == "POP":
@@ -92,6 +100,13 @@ class AsmInterp:
                 raise RuntimeError("Stack underflow")
             self.stack.append(self.stack[-1 - n])
         
+        elif op == "YANK":
+            if isinstance(arg, int):
+                i, j = arg & 0xF, (arg >> 4)
+            else:
+                i, j = arg
+            self.yank(i, j)
+
         elif op == "ALU":
             self.alu(arg.upper())
 
@@ -128,6 +143,9 @@ class AsmInterp:
         addr = self.r1
         self._ensure_memory_size(addr)
         self.memory[addr] = self.r0 & 0xFFFF
+
+    def yank(self, i, j):
+        del self.stack[-(i+j):-i]
 
     def _ensure_memory_size(self, addr):
         if addr >= len(self.memory):
