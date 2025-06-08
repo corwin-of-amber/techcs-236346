@@ -38,7 +38,7 @@ void CPU::step() {
 
 bool CPU::is_halted() const {
 #ifdef _has_signal_out_d_instr
-    return (outputs.d_instr & 0xf) == 0xf;
+    return ((outputs.d_instr >> 16) & 0xf) == 0xf;
 #else
     return false;
 #endif
